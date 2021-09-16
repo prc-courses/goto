@@ -1,27 +1,26 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 )
 
-const addForm = `
-<html><body>
-<form method="POST" action="/add">
-URL: <input type="text" name="url">
-<input type="submit" value="Add">
-</form>
-</html></body>
-`
+var store *URLStore
 
-var store = new(URLStore)
+var (
+	listenAddr = flag.String("http", ":3000", "http listen address")
+	dataFile   = flag.String("file", "store.gob", "data store file name")
+	hostname   = flag.String("host", "localhost:3000", "host name and port")
+)
 
 func main() {
-	store.urls = make(map[string]string)
-
+	flag.Parse()
+	fmt.Println("Server listening at", *hostname)
+	store = NewURLStore(*dataFile)
 	http.HandleFunc("/", Redirect)
 	http.HandleFunc("/add", Add)
-	http.ListenAndServe(":3000", nil)
+	http.ListenAndServe(*listenAddr, nil)
 }
 
 func Redirect(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +41,14 @@ func Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := store.Put(url)
-
 	fmt.Fprintf(w, "%s", key)
 }
+
+const addForm = `
+<html><body>
+<form method="POST" action="/add">
+URL: <input type="text" name="url">
+<input type="submit" value="Add">
+</form>
+</html></body>
+`
